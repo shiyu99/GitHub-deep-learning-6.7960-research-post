@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>A Comparative Study on Positional Embeddings</title>
+
+    <link rel="shortcut icon" href="images/icon.ico">
+
+    <style>
+
+        body {
+
+            font-family: Arial, sans-serif;
+
+            margin: 0;
+
+            padding: 0;
+
+            background-color: #ffffff;
+
+            color: #000;
+
+        }
+
+
+
+        .header {
+
+            text-align: center;
+
+            padding: 20px;
+
+            background-color: #fff;
+
+            border-bottom: 1px solid #ddd;
+
+        }
+
+
+
+        .header h1 {
+
+            font-size: 28px;
+
+            margin: 0;
+
+            color: #000;
+
+        }
+
+
+        .header p {
+
+            font-size: 14px;
+
+            margin: 5px 0;
+
+            color: #555;
+
+        }
+
+
+
+        .container {
+
+            display: flex;
+
+            max-width: 1300px;
+
+            margin: 20px auto;
+
+        }
+
+
+
+        .left-column {
+
+            width: 20%;
+
+            padding: 20px;
+
+            background-color: #fff;
+
+            border-right: 1px solid #ddd;
+
+        }
+
+
+
+        .left-column h3 {
+
+            font-size: 16px;
+
+            margin-bottom: 10px;
+
+            color: #000;
+
+        }
+
+
+
+        .left-column a {
+
+            display: block;
+
+            margin: 10px 0;
+
+            font-size: 14px;
+
+            color: #0073e6;
+
+            text-decoration: none;
+
+        }
+
+
+
+        .left-column a:hover {
+
+            text-decoration: underline;
+
+        }
+
+
+
+        .main-column {
+
+            width: 80%;
+
+            padding: 20px;
+
+            background-color: #fff;
+
+            display: block; /* Ensures stacking of sections */
+
+        }
+
+
+
+        .main-content {
+
+            margin: 0 auto; /* Centers content within the main column */
+
+        }
+
+
+
+        .main-content h2 {
+
+            font-size: 22px;
+
+            margin: 20px 0 10px;
+
+            color: #000;
+
+            border-bottom: 1px solid #ddd;
+
+            padding-bottom: 5px;
+
+        }
+
+
+
+        .main-content p {
+
+            font-size: 16px;
+
+            line-height: 1.6;
+
+            color: #000;
+
+        }
+
+
+
+        .main-content img.centered-image {
+
+            display: block;
+
+            margin: 20px auto; /* Centers the image horizontally */
+
+            max-width: 100%;
+
+            height: auto; /* Keeps the aspect ratio */
+
+        }
+
+
+
+        .caption {
+
+            font-size: 14px;
+
+            color: #777;
+
+            text-align: center;
+
+            margin-top: -10px;
+
+        }
+
+
+
+        .footer {
+
+            text-align: center;
+
+            padding: 10px;
+
+            background-color: #fff;
+
+            border-top: 1px solid #ddd;
+
+            font-size: 14px;
+
+            color: #777;
+
+        }
+
+        /* Normalize list spacing */
+
+ol, ul {
+
+    margin: 0; /* Removes default margin */
+
+    padding: 0; /* Removes default padding */
+
+    line-height: 1.6; /* Matches the line height of surrounding text */
+
+    list-style-position: inside; /* Optional: Makes bullets/numbers align with text */
+
+}
+
+
+
+/* Add custom spacing between list items */
+
+ol li, ul li {
+
+    margin-bottom: 0.5em; /* Adjust spacing between items */
+
+}
+
+
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="header">
+
+        <h1>A Comparative Study on Positional Embeddings</h1>
+
+            <h2 style="font-weight: normal; font-size: 1.2em; color: #555;">
+                An investigation into how different positional encodings impact the effectiveness of transformers on 2D image and 3D point cloud data.
+            </h2>
+
+
+        <p>Authors: Josefine Tijssen, Shiyu Su | Course: 6.7960, MIT</p>
+
+    </div>
+
+
+
+    <div class="container">
+
+        <div class="left-column">
+
+            <h3>Contents</h3>
+
+            <a href="#introduction">Introduction</a>
+
+            <a href="#related">Related Work</a>
+
+            <a href="#methods_2d">2D Experiments</a>
+
+            <a href="#results_2d">2D Results</a>
+
+            <a href="#methods_3d">3D Experiments</a>
+
+            <a href="#results_3d">3D Results</a>
+
+            <a href="#conclusion">Conclusion</a>
+
+        </div>
+
+
+
+        <div class="main-column">
+
+            <!-- First Section -->
+
+            <div class="main-content">
+
+                <h2 id="introduction">Introduction</h2>
+
+<p>The introduction of Transformer models in the landmark 2017 paper “Attention is All You Need”[1] by Vaswani et al. revolutionized deep learning by introducing self-attention mechanisms. This design allows models to dynamically weigh the importance of tokens relative to each other, independent of their positional distance in a sequence. By capturing long-range dependencies effectively and enabling parallel processing, Transformers significantly outperform sequential models like RNNs and LSTMs in both efficiency and scalability.</p>
+<p>However, a key limitation of Transformers is their lack of inherent positional awareness, requiring positional encodings to capture spatial or sequential relationships in input data. Since the introduction of Transformers, various positional encoding methods have been developed, each offering distinct trade-offs in representing spatial relationships and influencing performance. Despite this, comparisons of the ability of different positional encodings to generalize and mitigate noise in multi-dimensional spaces remain largely uncharted. Furthermore, comparative analyses on how different encodings adapt to varied tasks and manage spatial complexity are limited. Addressing this gap is essential, as the design of effective positional encodings directly affects the robustness and precision of models in real-world applications such as autonomous systems, augmented reality, and robotics.</p>
+<p>This study aims to address this gap by conducting a comparative analysis of three prominent positional encoding methods —<b>Learned, Sinusoidal, and Fourier</b>— in the context of 2D and 3D spatial classification tasks. Using the CIFAR-10 and ScanObjectNN datasets, we evaluate their performance on transformer architectures in tasks demanding high generalization and noise robustness. By analyzing both quantitative results and visualizations, we seek to provide actionable insights into how positional encodings impact model performance in real-world applications while paving the way for future innovations.</p>
+
+
+            </div>
+
+
+
+            <!-- Second Section -->
+
+            <div class="main-content">
+
+                <h2 id="related">Related Work</h2>
+
+                <p>
+
+                    This literature review discusses key studies on the topic of various positional embedding methods for 2D and 3D image classification in transformer models. The goal is to identify trends and gaps in research.
+
+                </p>
+
+                <h4 id="sinusoidal">Sinusoidal Positional Encoding</h4>
+
+                <p>
+
+                    The method for positional encoding proposed in the original “Attention is All You Need” paper by Vaswani et al. uses sinusoidal functions. In the paper, it is limited to 1D data such as words in a sentence. Specifically, it works by, for a given position <i>i</i> in a sequence and a particular dimension <i>d</i> of the embedding, defining the positional encoding using the sine and cosine functions at different frequencies as such:
+
+                </p>
+
+                <img src="./images/sinu_function.PNG" alt="Sinusoidal Embedding" class="centered-image">
+
+                <p>This approach was later adapted for computer vision tasks by Dosovitskiy et al. in “An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale” (2020) [3]. Here, images are divided into patches, treated as sequential tokens, and encoded using 2D sinusoidal functions. The encodings represent each patch's position along the x- and y- axes, enabling spatial awareness within the Transformer architecture for image classification tasks. </p>
+
+                <h4 id="learned">Learned Absolute Positional Encoding </h4>
+
+                <p>In the paper “Attention is All You Need” by Vaswani et al. (2017), the authors also discuss their experimentations with using a learned positional embedding design. In contrast to the predefined sinusoidal method, learned positional embeddings treat positions as trainable parameters, optimized during model training via traditional backpropagation. This flexibility allows the model to adapt positional representations to task-specific needs. For example:</p>
+
+                <ul>
+
+                    <li><b>BERT (Bidirectional Encoder Representations from Transformers)</b> (Devlin et al., 2018) [2]: BERT, a natural language processing model, uses learned absolute positional embeddings. These embeddings are added element-wise to word embeddings, creating a combined representation that incorporates both semantic and positional information. During training, these positional embeddings are optimized alongside other model parameters, improving adaptability to diverse text tasks. </li>
+
+                    <li><b>3DPPE (3D Point Positional Encoding)</b> (Wang et al.) [6]: This method extends learned positional embeddings to 3D object detection tasks. The embeddings represent the spatial positions of 3D points (e.g., coordinates x,y,z) and are learned directly from the data, enabling robust handling of multi-view spatial data. </li>
+
+                </ul>
+
+                <h4 id="fourier">Fourier Features for Positional Encoding </h4>
+
+                <p>The paper “Learnable Fourier Features for Multi-Dimensional Spatial Positional Encoding” by Li et al.[4] extends the concept of positional encoding to multi-dimensional spaces, such as 2D and 3D spatial data. Fourier features map input positions into a higher-dimensional space using sine and cosine functions with learnable parameters like frequencies and phases.
+
+                    Unlike fixed-frequency sinusoidal encodings, Fourier features allow the model to optimize encoding parameters during training. This flexibility makes Fourier features particularly well-suited for applications requiring detailed spatial representations, such as point cloud processing or multi-dimensional image reconstruction. By leveraging the expressiveness of Fourier-based encodings, models can achieve richer and more adaptive representations of spatial relationships. </p>
+                <p>While several studies have explored innovative positional embedding strategies, few have directly compared their performances in 2D and 3D image classification. This blog addresses that gap by examining how Learned, Sinusoidal, and Fourier embeddings impact Transformers' accuracy, noise robustness, and generalization, particularly in spatially intensive applications.</p>
+            </div>
+
+
+
+
+
+            <div class="main-content">
+
+                <h2 id="methods_2d">2D Experiments</h2>
+
+                <p>Our research aimed to evaluate the impact of various positional encoding methods on transformer performance in both 2D and 3D environments. We conducted a series of experiments to compare the effectiveness of Learned Positional Encoding, Sinusoidal Encoding, and Fourier Encoding.</p>
+
+                <p>For our 2D experiments, we utilized the widely recognized CIFAR-10 dataset, which consists of 60,000 low-resolution images (32x32 pixels) distributed across 10 classes. The dataset is split into 50,000 training and 10,000 testing images. CIFAR-10’s simplicity makes it a baseline for evaluating Transformer performance in tasks with moderate spatial relationships. We designed a custom Transformer model, as illustrated in Figure 1 below. The architecture was adapted for 2D image data by dividing each image into patches, which were then treated as input tokens. Positional encodings were applied to these token embeddings before passing them into the self-attention mechanism.</p>
+
+                <p><b>The training parameters were:</b></p>
+
+                <ul>
+
+                    <li>Epochs: 10.</li>
+
+                    <li>Batch Size: 256.</li>
+
+                    <li>Learning Rate: 0.001.</li>
+
+                    <li>Loss Function: Cross-entropy loss.</li>
+
+                </ul>
+
+                <p>We chose cross-entropy loss due to its suitability for classification tasks, which aligns with the nature of the CIFAR-10 dataset. The model underwent validation after each epoch to assess its performance and generalization capabilities. This setup allowed us to directly compare the impact of different positional encoding methods on the transformer's ability to process and classify 2D image data. By maintaining consistent hyperparameters across all encoding methods, we ensured a fair comparison of their relative effectiveness in the context of our custom transformer architecture.</p>
+
+                <img src="./images/fig1.PNG" alt="Transformer architecture" class="centered-image" style="width: 85%; height: auto;">
+
+                 <div class="caption"><strong>Figure 1:</strong> Transformer Architecture for 2D images.</div>
+
+            </div>
+
+            <div class="main-content">
+
+                <h2 id="results_2d">2D Results</h2>
+
+                <h3>Comparison of Training and Validation Accuracies for 2D data</h3>
+
+                <p>We first plotted the training and validation accuracies of the transformer with each of the three encodings. Figure 2 below shows similar trends among all three encodings that while the training accuracy went up consistently throughout 10 epochs, the validation accuracies plateaued before the epochs finish, which indicate that further training would lead to overfitting.</p>
+
+                <div style="text-align: center; margin: 20px 0;">
+
+                <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
+
+                    <img src="./images/graph1.png" alt="Graph 1: Sinusoidal Positional Encoding (2D)" style="width: 40%; height: auto;">
+
+                    <img src="./images/graph2.png" alt="Graph 2: Learned Positional Encoding (2D)" style="width: 40%; height: auto;">
+
+                    <img src="./images/graph3.png" alt="Graph 3: Fourier Positional Encoding (2D)" style="width: 40%; height: auto;">
+
+                </div>
+
+                <div class="caption" style="margin-top: 10px; font-size: 14px; color: #555;">
+
+                    <strong>Figure 2:</strong> Comparison of 2D training and validation accuracy trends across different positional encodings:
+
+                    (a) Sinusoidal, (b) Learned, and (c) Fourier. These trends highlight the differences in convergence behaviors and
+
+                    generalization performance.
+
+                </div>
+
+                </div>
+
+                <p>We then compared the training and validation accuracies of the transformer with these three encodings across the 10 epochs (figure 3). With all three encodings, the transformer achieved high training accuracy after 10 epochs (88.9% for Learned, 86.9% for Sinusoidal, 88.2% for Fourier).  </p>
+
+                <img src="./images/fig3.png" alt="2D Training Performance" class="centered-image" style="width: 45%; height: auto;">
+
+                <div class="caption"><strong>Figure 3:</strong> Training accuracy for the different positional encoding types on 2D CIFAR-10 images.</div>
+
+                <h3>2D Validation Performance</h3>
+
+                <p>The validation results in figure 4 revealed more pronounced differences between the encoding methods. <b>Fourier encoding</b> emerged as the superior performer, achieving a validation accuracy of 69% after the full training cycle. <b>Sinusoidal encoding</b> followed with a respectable 66.9% accuracy, while <b>Learned encoding</b> showed the most limited performance at 59.4%.</p>
+
+                <img src="./images/fig4.png" alt="2D Validation Performance" class="centered-image" style="width: 45%; height: auto;">
+
+                <div class="caption"><strong>Figure 4:</strong> Validation accuracy for the different positional encoding types on 2D CIFAR-10 images.</div>
+
+                <p>Key Observations:</p>
+
+                <ul>
+
+                    <li>Fourier encoding demonstrated the best generalization capability in 2D data.</li>
+
+                    <li>Learned encoding exhibited early plateauing behavior in validation performance.</li>
+
+                    <li>There is a consistent gap between training and validation accuracies across all positional encoding methods.</li>
+
+                </ul>
+
+                <p>The early plateauing of the Learned encoding's validation accuracy suggests inherent limitations in its ability to generalize beyond the training data. This pattern is clearly visible in the convergence plots, where the validation curve for Learned encoding flattens more rapidly than its counterparts.</p>
+
+                <h3>Visualization Deep Dive</h3>
+
+                <p>Our investigation expanded beyond numerical performance metrics to qualitatively analyze the impact of different positional encoding methods. This was achieved through attention map visualizations using selected CIFAR-10 images.</p>
+
+                <h4>Case 1: High Contrast, Simple Background</h4>
+
+                <p>In the first scenario, we analyzed images where the object of interest is highly distinguishable from a simple background. The example shown in Figure 5 displays a bird with distinct color contrast against its surroundings. The attention maps reveal that all three encoding methods focused primarily on the bird. However, Fourier encoding demonstrated the most precise alignment with the bird's shape, followed by sinusoidal encoding. Learned positional encoding performed the worst, failing to accurately capture the bird's contour.</p>
+
+                <img src="./images/fig5.png" alt="High Contrast Deep Dive" class="centered-image" style="width: 40%; height: auto;">
+
+                <div class="caption"><strong>Figure 5</strong>, from left to right: Learned positional encoding, Sinusoidal positional encoding, Fourier positional encoding.</div>
+
+                <h4>Case 2: Low Contrast, Simple Background</h4>
+
+                <p>The second scenario involved an object with low color contrast relative to a simple background (Figure 6). In this case, Fourier encoding again exhibited the sharpest focus on the object, with sinusoidal encoding as the second best. Learned positional encoding struggled to isolate the object, showing significant distractions from background noise.</p>
+
+                <img src="./images/fig6.png" alt="Low Contrast Deep Dive" class="centered-image" style="width: 40%; height: auto;">
+
+                <div class="caption"><strong>Figure 6</strong>, from left to right: Learned positional encoding, Sinusoidal positional encoding, Fourier positional encoding.</div>
+
+                <h4>Case 3: Low Contrast, Complex Background</h4>
+
+                <p>Lastly, we explored a challenging scenario where the object had low contrast with a moderately complex background (Figure 7). Here, all three encodings showed reduced attention accuracy, with the highest attention often misdirected to the high-contrast areas of the background. Despite this, Fourier encoding remained the least affected by background distractions, exhibiting relatively better focus on the object (a frog).</p>
+
+                <img src="./images/fig7.png" alt="Complex Background Deep Dive" class="centered-image" style="width: 40%; height: auto;">
+
+                <div class="caption"><strong>Figure 7</strong>, from left to right: Learned positional encoding, Sinusoidal positional encoding, Fourier positional encoding.</div>
+
+                <p>Thus, this visualization underscores the superior spatial alignment and robustness of Fourier positional encoding  across varying levels of object-background complexity.</p>
+
+                <p>An example of the full attention heatmap has been displayed below.</p>
+
+                <img src="./images/fig8.png" alt="Full 2D Heat Map Visualization" class="centered-image" style="width: 60%; height: auto;">
+
+                <div class="caption"><strong>Figure 8</strong>: Full attention heatmap visualization (from Learned Encoding).</div>
+
+            </div>
+
+            <div class="main-content">
+
+                <h2 id="methods_3d">3D Experiments</h2>
+
+<!--                <h3>Data</h3>-->
+
+                <p>The data for our 3D experiments on positional encoding methods came from the ScanObjectNN dataset, a benchmark for real-world 3D object classification. Unlike synthetic datasets, ScanObjectNN is derived from real 3D scans, and thus includes characteristics such as noise from the surrounding environment, occlusions caused by partial visibility of objects, and variability in object sizes, orientations, and point distributions.</p>
+
+                <p>The dataset consists of 15 object categories, such as chairs, tables and cabinets, and offers multiple configurations, from objects with background noise and segmented objects. Because of this, it is very valuable data in evaluating the robustness and effectiveness of 3D models in point-cloud classification. Within the ScanObjectNN dataset, each object is represented as a point cloud and contains 2048 individual points.</p>
+
+                <img src="./images/fig9.png" alt="ScanObjectNN Data Examples" class="centered-image" style="width: 60%; height: auto;">
+
+                <div class="caption"><strong>Figure 9</strong>, from left to right: A bed, toilet, and chair object scan in the ScanObjectNN dataset.</div>
+
+                <p>As can be seen in the image above, the scans include a significant amount of noise in addition to gaps in the objects. This makes it harder for the model to learn. </p>
+
+                <p>The <b>training parameters</b> for each embedding type (Fourier, Sinusoidal, and Absolute Learned) were: </p>
+
+                <ul>
+
+                    <li>Epochs: 20.</li>
+
+                    <li>Batch Size: 32.</li>
+
+                    <li>Learning Rate: 1x10^-4</li>
+
+                    <li>Loss Function: Cross-entropy loss.</li>
+
+                    <li>MLP dimension: 256.</li>
+
+                </ul>
+
+                <p>This batch size was as high as possible to maintain 2048 points per point cloud without running out of memory. This has better validation results than decreasing the points per point cloud but increasing the batch size. Furthermore, for runtime and memory efficiency, we limited our experiments to a training size of 4644 point cloud objects and validation size of 1136 point cloud objects.</p>
+
+                <p>While sinusoidal encoding was originally designed for 1D or 2D grids, it can still be applied to 3D point clouds by encoding the 3D coordinates (x, y, z) in a similar way. For each point in the cloud, we created a sinusoidal encoding of its position by mapping the (x, y, z) coordinates to sinusoidal functions with different frequencies. This allows the transformer to learn the spatial relationships between different points in the cloud, even if the points are unordered.</p>
+
+                <p>The architecture:</p>
+
+                <img src="./images/fig10.png" alt="3D Transformer architecture" class="centered-image" style="width: 90%; height: auto;">
+
+                 <div class="caption"><strong>Figure 10</strong>:  Transformer Architecture for 3D images.</div>
+
+            </div>
+
+            <div class="main-content">
+
+                <h2 id="results_3d">3D Results</h2>
+
+                <h3>Comparison of Training and Validation Accuracies for 3D data</h3>
+
+                <p>We first plotted the training and validation accuracies of the transformer with each of the three encodings. The figure 11 below shows similar trends among all three encodings that while the training accuracy went up consistently throughout 20 epochs, the validation accuracies plateaued before the epochs finish, which indicate that further training would lead to overfitting.</p>
+
+                <div style="text-align: center; margin: 20px 0;">
+
+                    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
+    
+                        <img src="./images/graph4.png" alt="Graph 4: Sinusoidal Positional Encoding (3D)" style="width: 55%; height: auto;">
+    
+                        <img src="./images/graph5.png" alt="Graph 5: Learned Positional Encoding (3D)" style="width: 55%; height: auto;">
+    
+                        <img src="./images/graph6.png" alt="Graph 6: Fourier Positional Encoding (3D)" style="width: 55%; height: auto;">
+    
+                    </div>
+    
+                    <div class="caption" style="margin-top: 10px; font-size: 14px; color: #555;">
+    
+                        <strong>Figure 11:</strong> Comparison of 3D training and validation accuracy trends across different positional encodings:
+    
+                        (a) Sinusoidal, (b) Learned, and (c) Fourier. These trends highlight the differences in convergence behaviors and
+    
+                        generalization performance.
+    
+                    </div>
+    
+                    </div>
+                <p>We then compared the training and validation accuracies of the transformer with these three encodings across the 20 epochs (figure 12). With all three encodings, the transformer achieved a relatively high training accuracy after 20 epochs (86% for Learned, 82% for Sinusoidal, 75% for Fourier).</p>
+                
+                <img src="./images/fig12.png" alt="3D Training Performance" class="centered-image" style="width: 45%; height: auto;">
+
+                <div class="caption"><strong>Figure 12:</strong> Training accuracy for the different positional encoding types on 3D ScanObjectNN images.</div>
+
+                <h3>3D Validation Performance</h3>
+
+                <p>The validation results revealed more pronounced differences between the encoding methods. Sinusoidal and Fourier encoding emerged as the superior performers, achieving a validation accuracy of 65.58% and 67.17% respectively after the full training cycle.  Meanwhile, learned encoding showed the most limited performance at only 50.44%.</p>
+
+                <img src="./images/fig13.png" alt="3D Validation Performance" class="centered-image" style="width: 45%; height: auto;">
+
+                <div class="caption"><strong>Figure 13:</strong> Validation accuracy for the different positional encoding types on 3D ScanObjectNN images.</div>
+                
+                <p>As can be seen in the above graph, up until epoch 16 Sinusoidal outperformed Fourier. However, in the long run, <b>Fourier Positional Encodings</b> have the highest validation accuracy. Throughout our testing, we found that the batch size and data size had a big impact on both Fourier's and Sinusoidal's accuracy, but we were limited in expanding this due to the lack of resources. We would expect for Fourier to outperform Sinusoidal in a big dataset.</p>
+
+                <p>Key Observations:</p>
+
+                <ul>
+
+                    <li>Fourier positional encodings, followed closely by Sinusoidal encodings, performed the best on 3D point cloud data. This matches the 2D experiments, where Fourier encoding method was also superior. We expect this to be because Fourier encodings can focus on representing very fine-grained features, which is relevant for the highly textured surfaces of the dataset of real-world 3D scans. However, with this smaller dataset, sinusoidal encodings also captured the necessary spatial relationships effectively.</li>
+
+                    <li>Absolute Learned Positional encoding exhibited early plateauing in validation performance, similar to the 2D results. This behavior is expected in 3D data, as these encodings tend to overfit to noisy training patterns. They struggle to adapt to the variability and complexity of real-world datasets like ScanObjectNN, which are inherently noisy.</li>
+
+                    <li>A consistent gap between training and validation accuracies across all positional encoding methods, although the gap is particularly significant between the training and validation results of the Absolute Learned Positional encoding. </li>
+
+                </ul>
+
+                <h4>Deep Dive</h4>
+
+                <p>When examining the 3D performance of the different positional encoding methods on the ScanObjectNN dataset, several key trends emerge. While all methods struggled with certain categories, their unique strengths and weaknesses highlight the nuances of each encoding approach.</p>
+
+                <p>The confusion matrices of the classifications of the validation data below show what the predicted versus true categories of the objects in the dataset were show the following results:</p>
+
+                <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
+
+                        <img src="./images/matrix1.png" alt="Matrix 1: Sinusoidal Confusion Matrix (3D)" style="width: 50%; height: auto;">
+
+                        <img src="./images/matrix2.png" alt="Matrix 2: Learned Confusion Matrix (3D)" style="width: 50%; height: auto;">
+
+                        <img src="./images/matrix3.png" alt="Matrix 3: Fourier Confusion Matrix (3D)" style="width: 50%; height: auto;">
+
+                </div>
+                <p></p>
+                <div class="caption"><strong>Figure 14:</strong> Confusion matrices for the validation testing of the different embedding methods.</div>
+
+                <p>The labels corresponding to object type: bag: 0, bin: 1, box: 2, cabinet: 3, chair: 4, desk: 5, display: 6, door: 7, shelf: 8, table: 9, bed: 10, pillow: 11, sink: 12, sofa: 13, toilet: 14.</p>
+
+                <p>Fourier and sinusoidal encodings both struggled significantly with the third category, "cabinet." This challenge likely stems from the high intra-class variability within this category. Cabinets often appear in various sizes, orientations, and levels of occlusion, which may disrupt the spatial regularities that Fourier and sinusoidal encodings rely on. In particular, these encodings may fail to capture finer-grained spatial relationships when multiple distinct but similar categories exist, such as shelving units.</p>
+
+                <p>Both the two objects below were considered of type “cabinet”.</p>
+
+                <img src="./images/fig14.png" alt="3D Cabinet Examples" class="centered-image" style="width: 50%; height: auto;">
+
+                <div class="caption"><strong>Figure 14:</strong> Label 3, Cabinet, examples from the 3D ScanObjectNN point cloud data.</div>
+
+                <p>It was often predicted to be 8, which is the shelving unit:</p>
+
+                 <img src="./images/fig15.png" alt="3D Shelving Examples" class="centered-image" style="width: 50%; height: auto;">
+
+                <div class="caption"><strong>Figure 15:</strong> Label 8, Shelving Unit, examples from the 3D ScanObjectNN point cloud data.</div>
+
+                <p>For the Sinusoidal Positional Encoding, the confusion matrix reveals challenges in distinguishing between similar object classes. Category 9 (table) is often confused with category 5 (desk). Furthermore, category 14 (toilet) is commonly misclassified as category 4 (chair). These patterns suggest that sinusoidal encodings struggle to differentiate between structurally similar objects.
+
+In contrast, Fourier Positional Encoding demonstrates improved performance in distinguishing between table (5) and desk (9), suggesting better handling of nuanced spatial differences. However, it continues to struggle with misclassifications between toilet (14) and chair (4). This persistent issue may partially stem from the smaller sample sizes for these categories in both the training and test datasets, which likely hinder the model's ability to generalize effectively.</p>
+
+                <p>Absolute learned embeddings struggled more evenly across all categories. The 35% gap between the training and validation accuracy suggests a tendency to overfit to the noise present in the training data, leading to poor generalization on the validation set. While learned embeddings are flexible and adaptable, their reliance on the training data distribution may limit their robustness to real-world variability.</p>
+
+                <h4>Limitations</h4>
+                <p>While attention heatmaps could provide additional insights into model behavior on 3D data, generating these visualizations proved challenging within the scope of this study. We also had to limit the batch and data size due to lack of available memory and other resources. This represents a valuable direction for future work. Despite the absence of attention visualizations for 3D data, the performance analysis highlights key distinctions in how positional encodings handle noise, variability, and spatial structure in point cloud classification.</p>
+
+            </div>
+
+            <div class="main-content">
+
+
+
+                <h2 id="conclusion">Conclusion </h2>
+
+
+
+                <p>Our analysis demonstrates the superior performance of Fourier positional encoding compared to Learned and Sinusoidal encodings for both 2D and 3D spatial tasks across the selected datasets, while also revealing the limitations of all three encoding methods when confronted with noisy backgrounds or low-contrast objects. This finding underscores the importance of encoding choice in spatial tasks and highlights areas for future improvement in positional encoding techniques.</p>
+
+
+
+                <p><b>Key Findings:</b></p>
+
+
+
+                <ul>
+
+                    <li><b>2D images classification:</b> Fourier encodings more consistently attributed attention to the object rather than the background compared to learned and sinusoidal encodings, even when the object and background had similar colors. This demonstrates its ability to capture precise spatial relationships and mitigate distractions given the model’s ability to optimize encoding parameters during training</li>
+
+
+
+                    <li><b>3D images classification:</b> Fourier encoding proved to be the most robust against noise distractions, outperforming learned and sinusoidal methods in scenarios involving complex spatial data and high-dimensional inputs. However, challenges with intra-class variability (e.g., distinguishing cabinets from shelving units) highlight the limitations of fixed-frequency methods in capturing fine-grained distinctions. Furthermore, learned encodings struggled significantly, overfitting to noisy patterns due to their reliance on training data.</li>
+
+
+
+                    <li><b>Generalization:</b> Learned positional encoding exhibited the poorest generalization, which can be attributed to its fixed encoding lengths. This limitation hinders its ability to adapt to diverse spatial configurations and tasks. </li>
+
+                </ul>
+
+
+
+                <p>Additionally, our experiments revealed that 3D tasks demand smaller batch sizes and additional training epochs compared to 2D tasks. This highlights the increased computational complexity and the need for careful hyperparameter tuning in 3D applications.</p>
+
+
+
+                <h4>Next Steps:</h4>
+
+                <p>To build on these findings, we propose the following avenues for future research:</p>
+
+                <ul>
+
+                    <li>
+
+                        <b>Exploration of Hybrid Positional Encodings</b>: Investigate the potential of hybrid methods that combine the strengths of absolute and relative positional encodings. For example, Rotary Position Embedding (RoPE), introduced by Su et.al.[5] and  Hyb-NeRF, introduced by Wang et.al.[7], would fall under this category.
+
+                    </li>
+
+                    <li>
+
+
+
+                        <b>Parameter Optimization: </b>Conduct extensive fine-tuning of model parameters, such as learning rates, batch sizes, and frequency ranges for Fourier features, to maximize performance across different tasks and datasets.
+
+                    </li>
+
+                    <li>
+
+                        <b>Understanding Performance Drivers: </b>Perform in-depth analyses to identify the specific factors contributing to the observed performance differences. For instance, studying how frequency ranges, noise levels, or data sparsity affect the encodings' robustness could provide actionable insights for model improvement.
+
+                    </li>
+
+                </ul>
+
+                <p>By addressing these areas, we aim to refine positional encoding techniques further and unlock their full potential in tasks involving 2D and 3D spatial reasoning. The insights gained from this study and future research will contribute to the development of more efficient and accurate transformer models for a wide range of spatial applications, from computer vision to 3D object detection and beyond.</p>
+
+
+
+            </div>
+
+           <div class="main-content">
+
+
+
+                <h2 id="reference">References</h2>
+
+                <ul>
+
+                    <li>
+
+                        [1] Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., & Polosukhin, I. (2017).
+
+                        <strong>Attention is all you need.</strong> Advances in Neural Information Processing Systems, 30
+
+
+
+                    </li>
+
+                    <li>
+
+                        [2] Devlin, J., Chang, M. W., Lee, K., & Toutanova, K. (2018).
+
+                        <strong>BERT: Pre-training of deep bidirectional transformers for language understanding.</strong>
+
+                        arXiv preprint arXiv:1810.04805
+
+                    </li>
+
+                    <li>
+
+                       [3] Dosovitskiy, A., Beyer, L., Kolesnikov, A., Weissenborn, D., Zhai, X., Unterthiner, T., Dehghani, M., Minderer, M., Heigold, G., Gelly, S., Uszkoreit, J., & Houlsby, N. (2020).
+
+                        <strong>An image is worth 16x16 words: Transformers for image recognition at scale.</strong>
+
+                        arXiv preprint arXiv:2010.11929
+
+                    </li>
+
+                    <li>
+
+                        [4] Li, Y., Si, S., Li, G., Hsieh, C. J., & Bengio, S. (2021).
+
+                        <strong>Learnable Fourier features for multi-dimensional spatial positional encoding.</strong>
+
+                        arXiv preprint arXiv:2106.02795
+
+
+                    </li>
+                    <li>
+                        [5] Su, J., Lu, Y., Pan, S., Wen, B., & Liu, Y. (2021).
+
+                        <strong>RoFormer: Enhanced Transformer with Rotary Position Embedding.</strong>
+
+                        arXiv preprintarXiv:2104.09864
+
+                    </li>
+                    <li>
+                        [6] Shu, C., Guo, Y., Xu, K., Chen, Z., Ding, E., & Han, J. (2023).
+
+                        <strong>3DPPE: 3D Point Positional Encoding for Transformer-based Multi-Camera 3D Object Detection.</strong>
+
+                        Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV).
+
+                    </li>
+                    <li>
+                        [7] Wang, Y., Gong, Y., & Zeng, Y. (2024).
+                        <strong>Hyb-NeRF: A Multiresolution Hybrid Encoding for Neural Radiance Fields.</strong>
+                        In Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision (WACV).
+                    </li>
+
+
+                </ul>
+
+            </div>
+        </div>
+
+    </div>
+
+
+
+    <div class="footer">
+
+        © 2024 A Comparative Study on Positional Embeddings. Shiyu Su and Josefine Tijssen. All Rights Reserved.
+
+    </div>
+
+</body>
+
+</html>
+
